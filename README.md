@@ -1,3 +1,4 @@
+<img width="1264" height="973" alt="Screenshot_20261011_110029" src="https://github.com/user-attachments/assets/be5bd539-5e20-40e0-8b66-300ef52071e9" />
 # Watchlist
 
 A simple offline TV show tracker — Western, K-Drama, C-Drama, Turkish, anime, western animation and more.
