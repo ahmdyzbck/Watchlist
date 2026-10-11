@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./react.js"></script>
+<script src="./react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Watchlist</title>
+<link rel="stylesheet" href="./styles.css">
+<style>
+@keyframes wlspin{to{transform:rotate(360deg)}}
+html.dark{color-scheme:dark;
+--color-bg:#161514;--color-surface:#211f1e;--color-text:#ecebea;
+--color-divider:color-mix(in srgb, #ecebea 32%, transparent);
+--color-neutral-100:#2d2b2b;--color-neutral-200:#383535;--color-neutral-300:#444141;--color-neutral-400:#605d5d;--color-neutral-500:#7d7979;--color-neutral-600:#9b9797;--color-neutral-700:#bab6b6;--color-neutral-800:#d7d3d3;--color-neutral-900:#f8f4f4;
+--color-accent-100:#3a130c;--color-accent-200:#4d170e;--color-accent-300:#7c1405;--color-accent-400:#ae1800;--color-accent-600:#ff9783;--color-accent-700:#ffc4b8;--color-accent-800:#ffe0d9;--color-accent-900:#fff2ef;
+--shadow-sm:0 1px 2px rgba(0,0,0,0.5);--shadow-md:0 3px 10px rgba(0,0,0,0.55);--shadow-lg:0 12px 32px rgba(0,0,0,0.65)}
+body{margin:0;background:var(--color-bg);color:var(--color-text)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-600)}
+input[type=checkbox]{accent-color:var(--color-accent);width:16px;height:16px;cursor:pointer;margin:0}
+</style>
+</helmet>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#ec3013"></rect><rect x="30" y="34" width="40" height="6" fill="#f3f2f2"></rect><rect x="30" y="47" width="40" height="6" fill="#f3f2f2"></rect><rect x="30" y="60" width="40" height="6" fill="#f3f2f2"></rect></svg></template>
+<div style="max-width:1180px;margin:0 auto;padding:var(--space-8) var(--space-4) 120px;display:flex;flex-direction:column">
+
+  <header style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--space-4);padding-bottom:var(--space-4);border-bottom:2px solid var(--color-divider)">
+    <div style="display:flex;flex-direction:column;gap:var(--space-1)">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);font-weight:600">TV log</div>
+      <h1 style="margin:0;font-size:48px;line-height:1">Watchlist</h1>
+      <div style="font-size:14px;color:var(--color-neutral-700);font-variant-numeric:tabular-nums">{{ totalLabel }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--space-2)">
+    <button onClick="{{ saveNow }}" title="{{ saveTitle }}" aria-label="Save" style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--color-divider);background:transparent;color:var(--color-text);cursor:pointer" style-hover="background:var(--color-neutral-200)">
+      <sc-if value="{{ saving }}" hint-placeholder-val="{{ false }}">{{ spinner }}</sc-if>
+      <sc-if value="{{ notSaving }}" hint-placeholder-val="{{ true }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg>
+      </sc-if>
+      <sc-if value="{{ showDirtyDot }}" hint-placeholder-val="{{ false }}">
+        <span style="position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--color-accent)"></span>
+      </sc-if>
+    </button>
+    <div style="position:relative">
+      <button onClick="{{ toggleMenu }}" title="Menu" aria-label="Menu" style="width:44px;height:44px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;border:1px solid var(--color-divider);background:{{ menuBtnBg }};cursor:pointer" style-hover="background:var(--color-neutral-200)">
+        <span style="width:20px;height:2px;background:var(--color-text)"></span>
+        <span style="width:20px;height:2px;background:var(--color-text)"></span>
+        <span style="width:20px;height:2px;background:var(--color-text)"></span>
+      </button>
+      <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ closeMenu }}" style="position:fixed;inset:0;z-index:7"></div>
+        <div style="position:absolute;right:0;top:calc(100% + 6px);min-width:220px;display:flex;flex-direction:column;background:var(--color-surface);border:1px solid var(--color-divider);box-shadow:var(--shadow-md);z-index:8">
+          <button onClick="{{ menuManage }}" style="display:flex;width:100%;padding:10px 14px;border:none;background:transparent;color:var(--color-text);font-size:14px;font-family:var(--font-body);text-align:left;cursor:pointer" style-hover="background:var(--color-neutral-200)">Edit types &amp; statuses</button>
+          <button onClick="{{ menuDark }}" style="display:flex;width:100%;padding:10px 14px;border:none;background:transparent;color:var(--color-text);font-size:14px;font-family:var(--font-body);text-align:left;cursor:pointer;border-top:1px solid var(--color-divider)" style-hover="background:var(--color-neutral-200)">{{ darkLabel }}</button>
+          <button onClick="{{ menuSwitch }}" style="display:flex;width:100%;padding:10px 14px;border:none;background:transparent;color:var(--color-text);font-size:14px;font-family:var(--font-body);text-align:left;cursor:pointer;border-top:1px solid var(--color-divider);color:var(--color-neutral-700);font-size:13px" style-hover="background:var(--color-neutral-200)">Use a different save file…</button>
+        </div>
+      </sc-if>
+    </div>
+    </div>
+  </header>
+
+  <sc-if value="{{ showBanner }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);margin-top:var(--space-4);background:var(--color-accent-100);border-left:4px solid var(--color-accent)">
+      <span style="flex:1 1 280px;font-size:14px;color:var(--color-accent-800)">{{ bannerText }}</span>
+      <button class="btn btn-primary" onClick="{{ bannerAction }}" style="justify-content:flex-start">{{ bannerBtn }}</button>
+    </div>
+  </sc-if>
+
+  <section style="display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-3);padding:var(--space-6) 0;border-bottom:2px solid var(--color-divider)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap">
+      <h2 style="margin:0;font-size:20px">Add shows</h2>
+      <div style="display:flex;border:1px solid var(--color-divider)">
+        <button onClick="{{ modeSingle }}" style="padding:7px 14px;font-size:13px;font-family:var(--font-body);border:none;cursor:pointer;background:{{ singleTabBg }};color:{{ singleTabFg }}">One at a time</button>
+        <button onClick="{{ modeMass }}" style="padding:7px 14px;font-size:13px;font-family:var(--font-body);border:none;border-left:1px solid var(--color-divider);cursor:pointer;background:{{ massTabBg }};color:{{ massTabFg }}">Mass add</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ isSingle }}" hint-placeholder-val="{{ true }}">
+      <form onSubmit="{{ addSingle }}" style="display:flex;flex-wrap:wrap;gap:var(--space-2)">
+        <input class="input" value="{{ newTitle }}" onChange="{{ setNewTitle }}" placeholder="Show title" style="flex:1 1 260px;width:auto;min-width:0;font-size:15px;min-height:40px">
+        <select class="input" value="{{ newType }}" onChange="{{ setNewType }}" style="flex:0 1 220px;width:auto;min-height:40px;cursor:pointer">
+          <optgroup label="Live action"><sc-for list="{{ liveOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+          <optgroup label="Animation"><sc-for list="{{ animOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+        </select>
+        <select class="input" value="{{ newStatus }}" onChange="{{ setNewStatus }}" style="flex:0 1 160px;width:auto;min-height:40px;cursor:pointer">
+          <sc-for list="{{ statusOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+        </select>
+        <button type="submit" class="btn btn-primary" style="min-width:120px;min-height:40px;justify-content:flex-start">Add show</button>
+      </form>
+    </sc-if>
+
+    <sc-if value="{{ isMass }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-3)">
+        <textarea class="input" value="{{ massText }}" onChange="{{ setMassText }}" rows="7" placeholder="Paste one title per line&#10;&#10;Breaking Bad&#10;Crash Landing on You&#10;Frieren: Beyond Journey's End" style="font-size:14px;line-height:1.6"></textarea>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)">
+          <span style="font-size:13px;color:var(--color-neutral-700)">Add all as</span>
+          <select class="input" value="{{ massType }}" onChange="{{ setMassType }}" style="width:auto;flex:0 1 220px;cursor:pointer">
+            <optgroup label="Live action"><sc-for list="{{ liveOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+            <optgroup label="Animation"><sc-for list="{{ animOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+          </select>
+          <select class="input" value="{{ massStatus }}" onChange="{{ setMassStatus }}" style="width:auto;flex:0 1 160px;cursor:pointer">
+            <sc-for list="{{ statusOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+          </select>
+          <span style="flex:1"></span>
+          <span style="font-size:13px;color:var(--color-neutral-700);font-variant-numeric:tabular-nums">{{ massSummary }}</span>
+          <button class="btn btn-primary" onClick="{{ addMass }}" disabled="{{ massDisabled }}" style="min-width:140px;justify-content:flex-start">{{ massBtnLabel }}</button>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+
+  <sc-if value="{{ hasStats }}" hint-placeholder-val="{{ false }}">
+    <section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));border-bottom:2px solid var(--color-divider)">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="6">
+        <div style="display:flex;flex-direction:column;gap:2px;padding:var(--space-4) var(--space-3) var(--space-4) 0;border-bottom:1px solid var(--color-divider)">
+          <span style="font-family:var(--font-heading);font-weight:800;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;color:{{ s.color }}">{{ s.value }}</span>
+          <span style="font-size:12px;color:var(--color-neutral-700)">{{ s.label }}</span>
+        </div>
+      </sc-for>
+    </section>
+  </sc-if>
+
+  <section style="display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-6) 0 var(--space-3)">
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="6">
+        <button onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:13px;font-family:var(--font-body);border:1px solid var(--color-divider);cursor:pointer;background:{{ c.bg }};color:{{ c.fg }}">
+          <span style="width:8px;height:8px;background:{{ c.color }};outline:1px solid {{ c.ring }}"></span>{{ c.label }}<span style="font-variant-numeric:tabular-nums;font-weight:600">{{ c.count }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-2)">
+      <input class="input" value="{{ q }}" onChange="{{ setQ }}" placeholder="Search titles or notes" style="flex:1 1 240px;width:auto;min-width:0">
+      <select class="input" value="{{ fType }}" onChange="{{ setFType }}" style="width:auto;flex:0 1 240px;cursor:pointer">
+        <option value="all">All types</option>
+        <option value="g:live">All live action</option>
+        <option value="g:anim">All animation</option>
+        <optgroup label="Live action"><sc-for list="{{ liveFilterOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+        <optgroup label="Animation"><sc-for list="{{ animFilterOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+      </select>
+      <select class="input" value="{{ sort }}" onChange="{{ setSort }}" style="width:auto;flex:0 1 180px;cursor:pointer">
+        <option value="added">Recently added</option>
+        <option value="updated">Recently updated</option>
+        <option value="title">Title A–Z</option>
+        <option value="rating">Highest rated</option>
+        <option value="status">By status</option>
+        <option value="type">By type</option>
+      </select>
+    </div>
+  </section>
+
+  <section style="overflow-x:auto">
+    <div style="min-width:1000px">
+      <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 170px 136px 92px 76px 64px 132px;gap:var(--space-2);align-items:center;padding:var(--space-2) 0;border-bottom:2px solid var(--color-divider);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-neutral-700);font-weight:600">
+        <span style="display:flex;justify-content:center"><input type="checkbox" checked="{{ allSelected }}" onChange="{{ toggleAll }}" title="Select all visible"></span>
+        <span style="padding-left:8px">Title</span><span>Type</span><span>Status</span><span>Season</span><span>Rewatched</span><span>Rating</span><span></span>
+      </div>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:var(--space-8) var(--space-2);font-size:15px;color:var(--color-neutral-700);border-bottom:1px solid var(--color-divider)">{{ emptyLabel }}</div>
+      </sc-if>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+        <div style="border-bottom:1px solid var(--color-divider);background:{{ r.rowBg }}">
+          <div style="display:grid;grid-template-columns:28px minmax(0,1fr) 170px 136px 92px 76px 64px 132px;gap:var(--space-2);align-items:center;padding:6px 0">
+            <span style="display:flex;justify-content:center"><input type="checkbox" checked="{{ r.selected }}" onChange="{{ r.onSelect }}"></span>
+            <input value="{{ r.title }}" onChange="{{ r.onTitle }}" style="min-width:0;padding:6px 8px;border:1px solid transparent;background:transparent;font-family:var(--font-heading);font-weight:600;font-size:15px;outline:none;color:{{ r.titleColor }};text-decoration:{{ r.deco }}" style-hover="border-color:var(--color-divider)" style-focus="border-color:var(--color-accent);background:var(--color-surface);text-decoration:none">
+            <select value="{{ r.type }}" onChange="{{ r.onType }}" style="min-width:0;padding:6px 6px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;font-family:var(--font-body);color:var(--color-text);cursor:pointer">
+              <optgroup label="Live action"><sc-for list="{{ liveOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+              <optgroup label="Animation"><sc-for list="{{ animOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+            </select>
+            <div style="display:flex;align-items:stretch;min-width:0;border:1px solid var(--color-divider);background:var(--color-surface)">
+              <span style="width:6px;flex:none;background:{{ r.color }}"></span>
+              <select value="{{ r.status }}" onChange="{{ r.onStatus }}" style="flex:1;min-width:0;padding:6px;border:none;background:transparent;font-size:13px;font-weight:600;font-family:var(--font-body);color:var(--color-text);cursor:pointer">
+                <sc-for list="{{ statusOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+              </select>
+            </div>
+            <div style="display:flex;min-width:0">
+              <input type="number" min="0" value="{{ r.season }}" onChange="{{ r.onSeason }}" placeholder="–" title="Current season" style="min-width:0;width:100%;padding:6px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;font-family:var(--font-body);font-variant-numeric:tabular-nums;outline:none" style-focus="border-color:var(--color-accent)">
+              <button onClick="{{ r.onSeasonUp }}" title="Next season" style="flex:none;width:28px;border:1px solid var(--color-divider);border-left:none;background:var(--color-surface);color:var(--color-text);font-size:15px;font-weight:600;cursor:pointer;padding:0" style-hover="background:var(--color-neutral-200)">+</button>
+            </div>
+            <div style="display:flex;min-width:0">
+              <input type="number" min="0" value="{{ r.rewatch }}" onChange="{{ r.onRewatch }}" placeholder="0" title="Times rewatched" style="min-width:0;width:100%;padding:6px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;font-family:var(--font-body);font-variant-numeric:tabular-nums;outline:none" style-focus="border-color:var(--color-accent)">
+              <button onClick="{{ r.onRewatchUp }}" title="Rewatched once more" style="flex:none;width:28px;border:1px solid var(--color-divider);border-left:none;background:var(--color-surface);color:var(--color-text);font-size:15px;font-weight:600;cursor:pointer;padding:0" style-hover="background:var(--color-neutral-200)">+</button>
+            </div>
+            <select value="{{ r.rating }}" onChange="{{ r.onRating }}" title="Rating out of 10" style="min-width:0;padding:6px 4px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:13px;font-family:var(--font-body);color:var(--color-text);cursor:pointer">
+              <sc-for list="{{ ratingOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+            </select>
+            <div style="display:flex;gap:2px;justify-content:flex-end">
+              <button onClick="{{ r.onFinish }}" title="Mark completed" style="width:30px;height:30px;border:none;background:transparent;color:{{ r.finishFg }};font-size:15px;font-weight:700;cursor:pointer" style-hover="background:var(--color-neutral-200)">✓</button>
+              <button onClick="{{ r.onToggleNotes }}" title="Notes" style="height:30px;padding:0 8px;border:none;background:{{ r.notesBtnBg }};color:{{ r.notesBtnFg }};font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer" style-hover="background:var(--color-neutral-200)">{{ r.notesLabel }}</button>
+              <button onClick="{{ r.onDelete }}" title="Remove" style="width:30px;height:30px;border:none;background:transparent;color:var(--color-neutral-600);font-size:18px;line-height:1;cursor:pointer" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">×</button>
+            </div>
+          </div>
+          <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:var(--space-2);padding:0 0 var(--space-3)">
+              <span></span>
+              <textarea value="{{ r.notes }}" onChange="{{ r.onNotes }}" rows="3" placeholder="Notes — where you left off, thoughts, who recommended it…" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--color-divider);background:var(--color-surface);font-size:14px;line-height:1.5;font-family:var(--font-body);resize:vertical;outline:none" style-focus="border-color:var(--color-accent)"></textarea>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:var(--space-6);transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-text);color:var(--color-bg);box-shadow:var(--shadow-lg);max-width:calc(100vw - 32px);z-index:5">
+      <span style="font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;padding-right:var(--space-2)">{{ selLabel }}</span>
+      <select value="" onChange="{{ bulkStatus }}" style="padding:6px 8px;border:1px solid var(--color-neutral-600);background:var(--color-neutral-900);color:var(--color-bg);font-size:13px;font-family:var(--font-body);cursor:pointer">
+        <option value="">Set status…</option>
+        <sc-for list="{{ statusOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+      </select>
+      <select value="" onChange="{{ bulkType }}" style="padding:6px 8px;border:1px solid var(--color-neutral-600);background:var(--color-neutral-900);color:var(--color-bg);font-size:13px;font-family:var(--font-body);cursor:pointer">
+        <option value="">Set type…</option>
+        <optgroup label="Live action"><sc-for list="{{ liveOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+        <optgroup label="Animation"><sc-for list="{{ animOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></optgroup>
+      </select>
+      <button class="btn btn-primary" onClick="{{ bulkDelete }}" style="padding:6px 12px">Delete</button>
+      <button onClick="{{ clearSel }}" style="padding:6px 10px;border:none;background:transparent;color:var(--color-bg);font-size:13px;font-family:var(--font-body);text-decoration:underline;cursor:pointer">Clear</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:var(--space-4);top:var(--space-4);display:flex;align-items:center;gap:var(--space-3);padding:10px 14px;background:var(--color-text);color:var(--color-bg);font-size:14px;box-shadow:var(--shadow-md);z-index:6">
+      <span>{{ toastText }}</span>
+      <sc-if value="{{ canUndo }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ undo }}" style="border:none;background:none;color:var(--color-accent-400);font-weight:700;font-family:var(--font-body);font-size:14px;cursor:pointer;padding:0">Undo</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showManage }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeManage }}" style="position:fixed;inset:0;background:color-mix(in srgb, var(--color-neutral-900) 50%, transparent);display:grid;place-items:center;padding:var(--space-4);z-index:10">
+      <div onClick="{{ stop }}" style="width:min(860px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-4);border-bottom:2px solid var(--color-divider)">
+          <h3 style="margin:0;font-size:22px">Types &amp; statuses</h3>
+          <button class="btn btn-secondary" onClick="{{ closeManage }}">Done</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+          <div style="display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4);border-right:2px solid var(--color-divider)">
+            <h6 style="margin:0">Show types</h6>
+            <sc-for list="{{ typeRows }}" as="t" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 108px 32px 30px;gap:6px;align-items:center">
+                <input class="input" value="{{ t.label }}" onChange="{{ t.onLabel }}" style="min-height:32px;padding:4px 8px">
+                <select class="input" value="{{ t.group }}" onChange="{{ t.onGroup }}" style="min-height:32px;padding:4px 6px;font-size:13px;cursor:pointer">
+                  <option value="live">Live action</option>
+                  <option value="anim">Animation</option>
+                </select>
+                <span style="font-size:12px;color:var(--color-neutral-700);text-align:right;font-variant-numeric:tabular-nums" title="Shows using this type">{{ t.count }}</span>
+                <button onClick="{{ t.onRemove }}" title="Remove type" style="width:30px;height:30px;border:none;background:transparent;color:var(--color-neutral-600);font-size:18px;cursor:pointer" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">×</button>
+              </div>
+            </sc-for>
+            <button class="btn btn-ghost" onClick="{{ addType }}" style="align-self:flex-start;margin-top:var(--space-1)">+ Add type</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-4)">
+            <h6 style="margin:0">Statuses</h6>
+            <sc-for list="{{ statusRows }}" as="s" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 108px 32px 30px;gap:6px;align-items:center">
+                <input class="input" value="{{ s.label }}" onChange="{{ s.onLabel }}" style="min-height:32px;padding:4px 8px">
+                <div style="display:flex;align-items:stretch;border:1px solid var(--color-divider);background:var(--color-surface)">
+                  <span style="width:6px;flex:none;background:{{ s.color }}"></span>
+                  <select value="{{ s.tone }}" onChange="{{ s.onTone }}" style="flex:1;min-width:0;padding:6px 4px;border:none;background:transparent;font-size:13px;font-family:var(--font-body);color:var(--color-text);cursor:pointer">
+                    <sc-for list="{{ toneOpts }}" as="o"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                  </select>
+                </div>
+                <span style="font-size:12px;color:var(--color-neutral-700);text-align:right;font-variant-numeric:tabular-nums" title="Shows with this status">{{ s.count }}</span>
+                <button onClick="{{ s.onRemove }}" title="Remove status" style="width:30px;height:30px;border:none;background:transparent;color:var(--color-neutral-600);font-size:18px;cursor:pointer" style-hover="background:var(--color-accent-100);color:var(--color-accent-700)">×</button>
+              </div>
+            </sc-for>
+            <button class="btn btn-ghost" onClick="{{ addStatus }}" style="align-self:flex-start;margin-top:var(--space-1)">+ Add status</button>
+            <p style="margin:var(--space-2) 0 0;font-size:12px;color:var(--color-neutral-700)">Removing a type or status moves its shows to the first one in the list.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;confirmDelete&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const KEY = 'watchlist.data.v1';
+const TONES = [
+  ['accent','Red','var(--color-accent)'],['ink','Black','var(--color-text)'],['deep','Dark red','var(--color-accent-800)'],
+  ['pink','Pink','var(--color-accent-300)'],['grey','Grey','var(--color-neutral-500)'],['light','Light grey','var(--color-neutral-300)']
+];
+const toneColor = t => (TONES.find(x => x[0]===t) || TONES[4])[2];
+const DEFAULT_TYPES = [
+  ['western','Western','live'],['kdrama','K-Drama','live'],['cdrama','C-Drama','live'],['jdrama','J-Drama','live'],
+  ['turkish','Turkish drama','live'],['thai','Thai drama','live'],['taiwanese','Taiwanese drama','live'],['indian','Indian series','live'],
+  ['latin','Latin / Telenovela','live'],['euro','European series','live'],['otherlive','Other live action','live'],
+  ['anime','Anime (Japanese)','anim'],['wanim','Western animation','anim'],['donghua','Donghua (Chinese)','anim'],['otheranim','Other animation','anim']
+].map(([id,label,group]) => ({ id, label, group }));
+const DEFAULT_STATUSES = [
+  ['watching','Watching','accent'],['completed','Completed','ink'],['hold','On hold','grey'],['plan','Plan to watch','pink'],['dropped','Dropped','light']
+].map(([id,label,tone]) => ({ id, label, tone }));
+const MINOR = new Set(['a','an','the','and','but','or','nor','for','so','yet','as','at','by','in','of','off','on','per','to','up','via','vs','vs.','from','into','with','over']);
+const titleCase = str => {
+  const words = str.trim().replace(/\s+/g,' ').split(' ');
+  return words.map((w, i) => {
+    if (/[A-Z]/.test(w) || !/[a-z]/.test(w)) return w;
+    const prev = words[i-1] || '';
+    const forceCap = i===0 || i===words.length-1 || /[:\-–—!?.]$/.test(prev);
+    if (!forceCap && MINOR.has(w)) return w;
+    return w.replace(/^([^a-z]*)([a-z])/, (_, p, c) => p + c.toUpperCase()).replace(/-([a-z])/g, (_, c) => '-' + c.toUpperCase());
+  }).join(' ');
+};
+const idb = () => new Promise((res, rej) => { const r = indexedDB.open('watchlist', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const idbGet = async k => { const db = await idb(); return new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); };
+const idbSet = async (k, v) => { try { const db = await idb(); const tx = db.transaction('kv','readwrite'); tx.objectStore('kv').put(v, k); } catch(e) {} };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+class Component extends DCLogic {
+  state = (() => {
+    let d = {};
+    try { d = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+    return { shows: d.shows || [], types: d.types || DEFAULT_TYPES, statuses: d.statuses || DEFAULT_STATUSES,
+      q:'', fType:'all', fStatus:'all', sort:'added', mode:'single', sel:{}, open:{},
+      newTitle:'', newType:'western', newStatus:'watching', massText:'', massType:'western', massStatus:'completed',
+      toast:null, undoSnap:null, showManage:false, menuOpen:false, saving:false, dirty: localStorage.getItem('watchlist.dirty')==='1', needReconnect:false, fileName:'', dark: localStorage.getItem('watchlist.dark')==='1' };
+  })();
+  fileHandle = null;
+
+  applyTheme(d) { document.documentElement.classList.toggle('dark', d); document.body.classList.toggle('dark', d); try { localStorage.setItem('watchlist.dark', d?'1':'0'); } catch(e) {} }
+  componentDidMount() {
+    this.applyTheme(this.state.dark);
+    const once = () => { window.removeEventListener('pointerdown', once, true); window.removeEventListener('keydown', once, true); this.autoConnect(); };
+    window.addEventListener('pointerdown', once, true); window.addEventListener('keydown', once, true);
+    this._key = e => { if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s') { e.preventDefault(); this.save(); } };
+    this._unload = e => { if (this.state.dirty) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('keydown', this._key); window.addEventListener('beforeunload', this._unload);
+    idbGet('data').then(d => {
+      if (d && Array.isArray(d.shows) && d.shows.length && !this.state.shows.length) {
+        this._loading = true;
+        this.setState({ shows:d.shows, types:d.types||this.state.types, statuses:d.statuses||this.state.statuses, needReconnect:false });
+      }
+    }).catch(() => {}).then(() => idbGet('handle')).then(async hd => {
+      if (!hd) return;
+      this.fileHandle = hd; this.setState({ fileName: hd.name });
+      let granted = false;
+      try { granted = (await hd.queryPermission({ mode:'readwrite' }))==='granted'; } catch(e) {}
+      if (granted) { try { await this.loadFrom(hd, true); } catch(e) {} }
+      else this._needPerm = true;
+    }).catch(() => {});
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); window.removeEventListener('beforeunload', this._unload); }
+  data() { const s = this.state; return { app:'watchlist', version:1, savedAt:new Date().toISOString(), types:s.types, statuses:s.statuses, shows:s.shows }; }
+  async save() {
+    if (this.state.saving) return;
+    const t0 = Date.now();
+    this.setState({ saving:true });
+    await this.doSave();
+    setTimeout(() => this.setState({ saving:false }), Math.max(0, 900 - (Date.now() - t0)));
+  }
+  async doSave() {
+    const data = this.data(), json = JSON.stringify(data, null, 2);
+    if (!window.showSaveFilePicker) {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type:'application/json' }));
+      a.download = 'watchlist.json'; document.body.appendChild(a); a.click(); a.remove();
+      this.setState({ dirty:false }); return this.flash('Downloaded watchlist.json');
+    }
+    try {
+      let hd = this.fileHandle;
+      if (!hd) {
+        hd = await window.showSaveFilePicker({ suggestedName:'watchlist.json', startIn:'documents', id:'watchlist', types:[{ description:'Watchlist', accept:{ 'application/json':['.json'] } }] });
+        this.fileHandle = hd; idbSet('handle', hd);
+      }
+      if ((await hd.queryPermission({ mode:'readwrite' }))!=='granted' && (await hd.requestPermission({ mode:'readwrite' }))!=='granted') return this.flash('Chrome needs permission to save to the file');
+      const w = await hd.createWritable(); await w.write(json); await w.close();
+      try { localStorage.setItem('watchlist.fileSavedAt', data.savedAt); localStorage.setItem('watchlist.dirty', '0'); } catch(e) {}
+      this.setState({ dirty:false, fileName:hd.name, needReconnect:false });
+    } catch(e) { if (e.name!=='AbortError') this.flash('Couldn’t save — try again'); }
+  }
+  async loadFrom(hd, onlyIfNewer) {
+    const f = await hd.getFile(); const txt = await f.text();
+    if (!txt.trim()) { this.setState({ needReconnect:false, fileName:hd.name }); return; }
+    const d = JSON.parse(txt);
+    const known = localStorage.getItem('watchlist.fileSavedAt') || '';
+    if (onlyIfNewer && this.state.shows.length && (!d.savedAt || d.savedAt <= known)) { this.setState({ fileName:hd.name }); return; }
+    try { localStorage.setItem('watchlist.fileSavedAt', d.savedAt || ''); } catch(e) {}
+    this._loading = true;
+    this.importData(d, true);
+    this.setState({ needReconnect:false, fileName:hd.name, dirty:false });
+  }
+  async autoConnect() {
+    try {
+      const hd = this.fileHandle || await idbGet('handle'); if (!hd) return;
+      this.fileHandle = hd;
+      if ((await hd.queryPermission({ mode:'readwrite' }))!=='granted' && (await hd.requestPermission({ mode:'readwrite' }))!=='granted') return;
+      await this.loadFrom(hd, true);
+    } catch(e) {}
+  }
+  async reconnect() {
+    try {
+      const hd = this.fileHandle;
+      if ((await hd.requestPermission({ mode:'readwrite' }))!=='granted') return;
+      await this.loadFrom(hd);
+      this.flash(`Loaded your list from ${hd.name}`);
+    } catch(e) { this.flash('Couldn’t open the file — pick it again'); this.pickFile(); }
+  }
+  async pickFile() {
+    if (!window.showOpenFilePicker) return;
+    if (this.state.dirty && !confirm('You have unsaved changes. Open another file anyway?')) return;
+    try {
+      const [hd] = await window.showOpenFilePicker({ startIn:'documents', id:'watchlist', types:[{ description:'Watchlist', accept:{ 'application/json':['.json'] } }] });
+      await hd.requestPermission({ mode:'readwrite' });
+      this.fileHandle = hd; idbSet('handle', hd);
+      await this.loadFrom(hd);
+      this.flash(`Loaded your list from ${hd.name}`);
+    } catch(e) { if (e.name!=='AbortError') this.flash('That file couldn’t be read'); }
+  }
+  componentDidUpdate(_, p) {
+    const s = this.state;
+    if (p.shows!==s.shows || p.types!==s.types || p.statuses!==s.statuses) {
+      if (this._loading) this._loading = false; else if (!s.dirty) { this.setState({ dirty:true }); try { localStorage.setItem('watchlist.dirty','1'); } catch(e) {} }
+      const snapData = { shows:s.shows, types:s.types, statuses:s.statuses, savedAt:new Date().toISOString() };
+      try { localStorage.setItem(KEY, JSON.stringify(snapData)); } catch(e) {}
+      idbSet('data', snapData);
+      clearTimeout(this._as); this._as = setTimeout(() => this.autoSave(), 2500);
+    }
+  }
+  snap() { const s = this.state; return { shows:s.shows, types:s.types, statuses:s.statuses }; }
+  flash(text, undoSnap=null) {
+    clearTimeout(this._t);
+    this.setState({ toast:text, undoSnap });
+    this._t = setTimeout(() => this.setState({ toast:null, undoSnap:null }), 6000);
+  }
+  upd(id, patch) { const now = Date.now(); this.setState(s => ({ shows: s.shows.map(x => x.id===id ? { ...x, ...patch, updated:now } : x) })); }
+  async autoSave() {
+    const hd = this.fileHandle; if (!hd || this.state.saving) return;
+    try { if ((await hd.queryPermission({ mode:'readwrite' }))!=='granted') return; } catch(e) { return; }
+    this.save();
+  }
+
+  importData(d, quiet) {
+    const arr = Array.isArray(d) ? d : d.shows;
+    if (!Array.isArray(arr)) throw new Error('bad');
+    let types = Array.isArray(d.types) && d.types.length ? d.types : this.state.types;
+    let statuses = Array.isArray(d.statuses) && d.statuses.length ? d.statuses : this.state.statuses;
+    const shows = arr.filter(x => x && x.title).map(x => ({ ...x, id: x.id || uid(), added: x.added || Date.now(),
+      type: types.some(t=>t.id===x.type) ? x.type : types[0].id, status: statuses.some(t=>t.id===x.status) ? x.status : statuses[0].id }));
+    const prev = this.snap();
+    this.setState({ shows, types, statuses, sel:{}, open:{} });
+    if (!quiet) this.flash(`Loaded ${shows.length} show${shows.length===1?'':'s'} from file`, prev);
+  }
+
+  renderVals() {
+    const st = this.state, props = this.props;
+    const confirmDelete = props.confirmDelete ?? false;
+    const { types, statuses, shows } = st;
+    const typeById = Object.fromEntries(types.map(t => [t.id, t]));
+    const statusById = Object.fromEntries(statuses.map(t => [t.id, t]));
+    const liveOpts = types.filter(t => t.group==='live').map(t => ({ v:t.id, l:t.label }));
+    const animOpts = types.filter(t => t.group==='anim').map(t => ({ v:t.id, l:t.label }));
+    const statusOpts = statuses.map(s => ({ v:s.id, l:s.label }));
+    const ratingOpts = [{ v:'', l:'–' }].concat(Array.from({ length:10 }, (_,i) => ({ v:String(10-i), l:String(10-i) })));
+
+    const typeMatch = s => st.fType==='all' ? true : st.fType.startsWith('g:') ? (typeById[s.type]||{}).group===st.fType.slice(2) : s.type===st.fType;
+    const q = st.q.trim().toLowerCase();
+    const textMatch = s => !q || s.title.toLowerCase().includes(q) || (s.notes||'').toLowerCase().includes(q);
+    const base = shows.filter(s => typeMatch(s) && textMatch(s));
+    const counts = {}; base.forEach(s => counts[s.status] = (counts[s.status]||0) + 1);
+    const tCounts = {}; shows.forEach(s => tCounts[s.type] = (tCounts[s.type]||0) + 1);
+    const sCounts = {}; shows.forEach(s => sCounts[s.status] = (sCounts[s.status]||0) + 1);
+
+    const statusChips = [{ id:'all', label:'All', tone:null }].concat(statuses).map(s => {
+      const active = st.fStatus===s.id;
+      return { label:s.label, count: s.id==='all' ? base.length : (counts[s.id]||0),
+        color: s.tone ? toneColor(s.tone) : 'transparent', ring: s.tone ? 'transparent' : 'transparent',
+        bg: active ? 'var(--color-text)' : 'transparent', fg: active ? 'var(--color-bg)' : 'var(--color-text)',
+        onClick: () => this.setState({ fStatus:s.id }) };
+    });
+
+    let list = base.filter(s => st.fStatus==='all' || s.status===st.fStatus);
+    const sIdx = id => statuses.findIndex(x => x.id===id), tIdx = id => types.findIndex(x => x.id===id);
+    const cmp = { title:(a,b)=>a.title.localeCompare(b.title), rating:(a,b)=>(+b.rating||0)-(+a.rating||0),
+      status:(a,b)=>sIdx(a.status)-sIdx(b.status), type:(a,b)=>tIdx(a.type)-tIdx(b.type), added:(a,b)=>b.added-a.added, updated:(a,b)=>(b.updated||b.added)-(a.updated||a.added) }[st.sort];
+    list = [...list].sort((a,b) => cmp(a,b) || b.added-a.added);
+
+    const rows = list.map(s => {
+      const stt = statusById[s.status] || statuses[0];
+      const dim = stt && stt.tone==='light';
+      const selected = !!st.sel[s.id], open = !!st.open[s.id], hasNotes = !!(s.notes||'').trim();
+      return { title:s.title, type:s.type, status:s.status, season:s.season??'', ep:s.ep??'', total:s.total??'', rating:s.rating||'', notes:s.notes||'',
+        selected, open, color: toneColor(stt && stt.tone),
+        rowBg: selected ? 'var(--color-accent-100)' : 'transparent',
+        titleColor: dim ? 'var(--color-neutral-600)' : 'var(--color-text)', deco: dim ? 'line-through' : 'none',
+        notesLabel: open ? 'Close' : hasNotes ? 'Notes •' : 'Notes',
+        notesBtnBg: open ? 'var(--color-neutral-200)' : 'transparent', notesBtnFg: hasNotes || open ? 'var(--color-text)' : 'var(--color-neutral-600)',
+        onSelect: () => this.setState(x => ({ sel: { ...x.sel, [s.id]: !x.sel[s.id] } })),
+        onToggleNotes: () => this.setState(x => ({ open: { ...x.open, [s.id]: !x.open[s.id] } })),
+        onTitle: e => this.upd(s.id, { title:e.target.value }),
+        onType: e => this.upd(s.id, { type:e.target.value }),
+        onStatus: e => this.upd(s.id, { status:e.target.value }),
+        onSeason: e => this.upd(s.id, { season:e.target.value }),
+        onSeasonUp: () => this.upd(s.id, { season:String((+s.season||0)+1) }),
+        rewatch: s.rewatch ?? '',
+        onRewatch: e => this.upd(s.id, { rewatch:e.target.value }),
+        onRewatchUp: () => this.upd(s.id, { rewatch:String((+s.rewatch||0)+1) }),
+        finishFg: s.status==='completed' ? 'var(--color-accent)' : 'var(--color-neutral-600)',
+        onFinish: () => { if (statusById.completed) { this.upd(s.id, { status:'completed' }); this.flash(`Completed “${s.title}”`); } },
+        onEp: e => this.upd(s.id, { ep:e.target.value }),
+        onTotal: e => this.upd(s.id, { total:e.target.value }),
+        onRating: e => this.upd(s.id, { rating:e.target.value }),
+        onNotes: e => this.upd(s.id, { notes:e.target.value }),
+        onDelete: () => {
+          if (confirmDelete && !confirm(`Remove "${s.title}"?`)) return;
+          const prev = this.snap();
+          this.setState(x => ({ shows: x.shows.filter(y => y.id!==s.id) }));
+          this.flash(`Removed “${s.title}”`, prev);
+        } };
+    });
+
+    const selIds = Object.keys(st.sel).filter(k => st.sel[k] && shows.some(s => s.id===k));
+    const visibleIds = list.map(s => s.id);
+    const allSelected = visibleIds.length>0 && visibleIds.every(id => st.sel[id]);
+    const bulk = (patch, label) => {
+      const ids = new Set(selIds), prev = this.snap();
+      this.setState(x => ({ shows: x.shows.map(s => ids.has(s.id) ? { ...s, ...patch } : s) }));
+      this.flash(`${label} for ${ids.size} show${ids.size===1?'':'s'}`, prev);
+    };
+
+    const existing = new Set(shows.map(s => s.title.trim().toLowerCase()));
+    const seen = new Set();
+    const massLines = st.mode==='mass' ? st.massText.split('\n').map(l => titleCase(l)).filter(Boolean) : [];
+    const fresh = massLines.filter(t => { const k = t.toLowerCase(); const ok = !existing.has(k) && !seen.has(k); seen.add(k); return ok; });
+    const dups = massLines.length - fresh.length;
+    const isSingle = st.mode==='single';
+    const n = shows.length, done = sCounts.completed || 0, watching = sCounts.watching || 0;
+
+    const reassign = (key, removedId, list) => {
+      const fallback = list.find(x => x.id!==removedId);
+      return shows.map(s => s[key]===removedId ? { ...s, [key]: fallback.id } : s);
+    };
+
+    const vals = {
+      liveOpts, animOpts, statusOpts, ratingOpts, statusChips, rows,
+      menuOpen: st.menuOpen, menuBtnBg: st.menuOpen ? 'var(--color-neutral-200)' : 'transparent',
+      toggleMenu: () => this.setState(x => ({ menuOpen: !x.menuOpen })), closeMenu: () => this.setState({ menuOpen:false }),
+      menuSwitch: () => { this.setState({ menuOpen:false }); this.pickFile(); },
+      saveNow: () => this.save(),
+      saving: st.saving, notSaving: !st.saving, showDirtyDot: st.dirty && !st.saving,
+      saveTitle: st.fileName ? `Save to ${st.fileName} (Ctrl+S)` : 'Save (Ctrl+S)',
+      spinner: React.createElement('svg', { width:20, height:20, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:2, strokeLinecap:'square', style:{ animation:'wlspin 0.8s linear infinite' } }, React.createElement('path', { d:'M21 12a9 9 0 1 1-6.219-8.56' })),
+      showBanner: !st.fileName && !st.shows.length && !!window.showOpenFilePicker,
+      bannerText: st.needReconnect ? `Your list is saved in ${st.fileName}. Chrome needs one click to open it again.` : 'Click the save icon once to choose where your list file lives — after that it always saves to the same file. Already have a watchlist file?',
+      bannerBtn: st.needReconnect ? `Load ${st.fileName}` : 'Open my file',
+      bannerAction: () => st.needReconnect ? this.reconnect() : this.pickFile(),
+      menuManage: () => this.setState({ menuOpen:false, showManage:true }),
+      menuDark: () => { const d = !this.state.dark; this.applyTheme(d); this.setState({ dark: d, menuOpen:false }); },
+      darkLabel: st.dark ? 'Light mode' : 'Dark mode', toggleDark: () => { const d = !this.state.dark; this.applyTheme(d); this.setState({ dark: d }); },
+      liveFilterOpts: liveOpts.map(o => ({ v:o.v, l:`${o.l} (${tCounts[o.v]||0})` })),
+      animFilterOpts: animOpts.map(o => ({ v:o.v, l:`${o.l} (${tCounts[o.v]||0})` })),
+      hasStats: n>0,
+      stats: (() => {
+        const rated = shows.filter(s => +s.rating);
+        const avg = rated.length ? (rated.reduce((a,s)=>a + +s.rating, 0)/rated.length).toFixed(1) : '–';
+        const rew = shows.reduce((a,s)=>a + (+s.rewatch||0), 0);
+        const out = [{ value:n, label:'Shows', color:'var(--color-text)' }, { value:avg, label:`Avg rating · ${rated.length} rated`, color:'var(--color-accent)' }];
+        statuses.forEach(x => { if (sCounts[x.id]) out.push({ value:sCounts[x.id], label:x.label, color:'var(--color-text)' }); });
+        types.filter(t => tCounts[t.id]).sort((a,b)=>tCounts[b.id]-tCounts[a.id]).forEach(t => out.push({ value:tCounts[t.id], label:t.label, color:'var(--color-neutral-700)' }));
+        if (rew) out.push({ value:rew, label:'Rewatches', color:'var(--color-text)' });
+        return out;
+      })(),
+      totalLabel: n ? `${n} show${n===1?'':'s'} · ${watching} watching · ${done} completed` : 'Every show you watch, in one list',
+      isEmpty: rows.length===0,
+      emptyLabel: n ? 'No shows match these filters.' : 'Nothing here yet. Add a show above, or paste a whole list with Mass add.',
+      q: st.q, setQ: e => this.setState({ q:e.target.value }),
+      fType: st.fType, setFType: e => this.setState({ fType:e.target.value }),
+      sort: st.sort, setSort: e => this.setState({ sort:e.target.value }),
+      isSingle, isMass: !isSingle,
+      singleTabBg: isSingle ? 'var(--color-accent)' : 'transparent', singleTabFg: isSingle ? 'var(--color-bg)' : 'var(--color-text)',
+      massTabBg: !isSingle ? 'var(--color-accent)' : 'transparent', massTabFg: !isSingle ? 'var(--color-bg)' : 'var(--color-text)',
+      modeSingle: () => this.setState({ mode:'single' }), modeMass: () => this.setState({ mode:'mass' }),
+      newTitle: st.newTitle, setNewTitle: e => this.setState({ newTitle:e.target.value }),
+      newType: typeById[st.newType] ? st.newType : types[0].id, setNewType: e => this.setState({ newType:e.target.value }),
+      newStatus: statusById[st.newStatus] ? st.newStatus : statuses[0].id, setNewStatus: e => this.setState({ newStatus:e.target.value }),
+      addSingle: e => {
+        e.preventDefault();
+        const title = titleCase(st.newTitle); if (!title) return;
+        const type = typeById[st.newType] ? st.newType : types[0].id, status = statusById[st.newStatus] ? st.newStatus : statuses[0].id;
+        this.setState(x => ({ newTitle:'', shows:[{ id:uid(), title, type, status, added:Date.now() }, ...x.shows] }));
+        this.flash(`Added “${title}”`);
+      },
+      massText: st.massText, setMassText: e => this.setState({ massText:e.target.value }),
+      massType: typeById[st.massType] ? st.massType : types[0].id, setMassType: e => this.setState({ massType:e.target.value }),
+      massStatus: statusById[st.massStatus] ? st.massStatus : statuses[0].id, setMassStatus: e => this.setState({ massStatus:e.target.value }),
+      massSummary: massLines.length ? `${fresh.length} new${dups ? ` · ${dups} duplicate${dups===1?'':'s'} skipped` : ''}` : '',
+      massBtnLabel: fresh.length ? `Add ${fresh.length} show${fresh.length===1?'':'s'}` : 'Add shows',
+      massDisabled: !fresh.length,
+      addMass: () => {
+        if (!fresh.length) return;
+        const type = typeById[st.massType] ? st.massType : types[0].id, status = statusById[st.massStatus] ? st.massStatus : statuses[0].id;
+        const now = Date.now(), prev = this.snap();
+        const items = fresh.map((title,i) => ({ id:uid()+i, title, type, status, added:now - i }));
+        this.setState(x => ({ massText:'', shows:[...items, ...x.shows] }));
+        this.flash(`Added ${items.length} show${items.length===1?'':'s'}`, prev);
+      },
+      allSelected,
+      toggleAll: () => this.setState(x => { const sel = { ...x.sel }; visibleIds.forEach(id => sel[id] = !allSelected); return { sel }; }),
+      hasSelection: selIds.length>0, selLabel: `${selIds.length} selected`,
+      bulkStatus: e => { const v = e.target.value; if (v) bulk({ status:v }, `Status set to ${statusById[v].label}`); },
+      bulkType: e => { const v = e.target.value; if (v) bulk({ type:v }, `Type set to ${typeById[v].label}`); },
+      bulkDelete: () => {
+        if (confirmDelete && !confirm(`Delete ${selIds.length} shows?`)) return;
+        const ids = new Set(selIds), prev = this.snap();
+        this.setState(x => ({ shows: x.shows.filter(s => !ids.has(s.id)), sel:{} }));
+        this.flash(`Deleted ${ids.size} show${ids.size===1?'':'s'}`, prev);
+      },
+      clearSel: () => this.setState({ sel:{} }),
+      hasToast: !!st.toast, toastText: st.toast || '', canUndo: !!st.undoSnap,
+      undo: () => { clearTimeout(this._t); this.setState({ ...st.undoSnap, toast:null, undoSnap:null }); },
+      showManage: st.showManage,
+      openManage: () => this.setState({ showManage:true }),
+      closeManage: () => this.setState({ showManage:false }),
+      stop: e => e.stopPropagation(),
+      toneOpts: TONES.map(t => ({ v:t[0], l:t[1] })),
+      typeRows: types.map(t => ({ label:t.label, group:t.group, count:tCounts[t.id]||0,
+        onLabel: e => this.setState(x => ({ types: x.types.map(y => y.id===t.id ? { ...y, label:e.target.value } : y) })),
+        onGroup: e => this.setState(x => ({ types: x.types.map(y => y.id===t.id ? { ...y, group:e.target.value } : y) })),
+        onRemove: () => {
+          if (types.length<=1) return this.flash('Keep at least one type');
+          const prev = this.snap();
+          this.setState({ shows: reassign('type', t.id, types), types: types.filter(y => y.id!==t.id) });
+          this.flash(`Removed type “${t.label}”`, prev);
+        } })),
+      statusRows: statuses.map(s => ({ label:s.label, tone:s.tone, color:toneColor(s.tone), count:sCounts[s.id]||0,
+        onLabel: e => this.setState(x => ({ statuses: x.statuses.map(y => y.id===s.id ? { ...y, label:e.target.value } : y) })),
+        onTone: e => this.setState(x => ({ statuses: x.statuses.map(y => y.id===s.id ? { ...y, tone:e.target.value } : y) })),
+        onRemove: () => {
+          if (statuses.length<=1) return this.flash('Keep at least one status');
+          const prev = this.snap();
+          this.setState({ shows: reassign('status', s.id, statuses), statuses: statuses.filter(y => y.id!==s.id),
+            fStatus: st.fStatus===s.id ? 'all' : st.fStatus });
+          this.flash(`Removed status “${s.label}”`, prev);
+        } })),
+      addType: () => this.setState(x => ({ types: [...x.types, { id:uid(), label:'New type', group:'live' }] })),
+      addStatus: () => this.setState(x => ({ statuses: [...x.statuses, { id:uid(), label:'New status', tone:'grey' }] }))
+    };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>
